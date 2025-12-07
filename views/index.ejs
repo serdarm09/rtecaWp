@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Toplu Mesaj Gönderici</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        h1 {
+            color: #25D366;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+        .qr-container {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .qr-container h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .qr-container p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        #qr-code img {
+            border: 5px solid #25D366;
+            border-radius: 10px;
+            max-width: 100%;
+        }
+        .status {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        button {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            background: #128C7E;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .contacts {
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        .contact {
+            padding: 10px;
+            background: white;
+            margin: 8px 0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .contact:hover {
+            background: #e8f5e9;
+            transform: translateX(5px);
+        }
+        .contact input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+        .contact label {
+            cursor: pointer;
+            font-size: 15px;
+            flex: 1;
+        }
+        .message-section {
+            margin: 25px 0;
+        }
+        .message-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #25D366;
+        }
+        input[type="file"] {
+            margin: 15px 0;
+            padding: 10px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn-group button {
+            flex: 1;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #25D366;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .contact-count {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .select-all {
+            background: #128C7E;
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body data-authenticated="<%= authenticated %>">
+    <div class="container">
+        <h1>📱 WhatsApp Toplu Mesaj Gönderici</h1>
+
+        <% if (!authenticated) { %>
+            <div class="qr-container">
+                <h2>WhatsApp'ı Bağlayın</h2>
+                <p>WhatsApp Web QR kodunu telefonunuzla taratın</p>
+                <div id="qr-code">
+                    <div class="spinner"></div>
+                    <p>QR kod yükleniyor...</p>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="status">
+                ✅ WhatsApp Bağlı - Mesaj göndermeye hazır!
+            </div>
+
+            <button onclick="loadContacts()" id="load-btn">📋 Kişileri Yükle</button>
+
+            <div id="contacts-container" style="display: none;">
+                <div class="contact-count">
+                    Seçili: <span id="selected-count">0</span> / 10 kişi
+                    <button class="select-all" onclick="toggleSelectAll()">Tümünü Seç/Kaldır</button>
+                </div>
+                <div class="contacts" id="contacts-list"></div>
+            </div>
+
+            <div class="message-section">
+                <h3>💬 Mesaj Oluştur</h3>
+                <textarea id="message" placeholder="Mesajınızı buraya yazın... (isteğe bağlı)"></textarea>
+                
+                <h3 style="margin-top: 20px;">📷 Fotoğraf Ekle</h3>
+                <input type="file" id="photo" accept="image/*">
+                
+                <div class="btn-group">
+                    <button onclick="sendMessage()" id="send-btn" disabled>🚀 Gönder</button>
+                    <button onclick="clearForm()" style="background: #dc3545;">🗑️ Temizle</button>
+                </div>
+            </div>
+
+            <div id="loading">
+                <div class="spinner"></div>
+                <p>Mesajlar gönderiliyor...</p>
+            </div>
+
+            <div id="results"></div>
+        <% } %>
+    </div>
+
+    <script>
+        const authenticated = document.body.dataset.authenticated === 'true';
+        let allSelected = false;
+
+        async function loadQR() {
+            setInterval(async () => {
+                const response = await fetch('/qr');
+                const data = await response.json();
+                if (data.qr) {
+                    document.getElementById('qr-code').innerHTML = `<img src="${data.qr}" alt="QR Code" style="max-width: 300px;">`;
+                } else if (data.authenticated) {
+                    location.reload();
+                }
+            }, 2000);
+        }
+
+        async function loadContacts() {
+            const btn = document.getElementById('load-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Yükleniyor...';
+
+            const response = await fetch('/contacts');
+            const data = await response.json();
+            
+            if (data.error) {
+                alert('❌ ' + data.error);
+                btn.disabled = false;
+                btn.textContent = '📋 Kişileri Yükle';
+                return;
+            }
+            
+            const list = document.getElementById('contacts-list');
+            const container = document.getElementById('contacts-container');
+            list.innerHTML = '';
+            
+            if (data.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #999;">Kişi bulunamadı</p>';
+            } else {
+                data.forEach(contact => {
+                    const div = document.createElement('div');
+                    div.className = 'contact';
+                    div.innerHTML = `
+                        <input type="checkbox" id="${contact.id}" value="${contact.id}" onchange="updateCount()">
+                        <label for="${contact.id}">
+                            <strong>${contact.name}</strong> 
+                            <span style="color: #666;">(${contact.number})</span>
+                        </label>
+                    `;
+                    list.appendChild(div);
+                });
+            }
+            
+            container.style.display = 'block';
+            btn.textContent = '✅ Kişiler Yüklendi';
+            updateCount();
+        }
+
+        function toggleSelectAll() {
+            allSelected = !allSelected;
+            const checkboxes = document.querySelectorAll('#contacts-list input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = allSelected);
+            updateCount();
+        }
+
+        function updateCount() {
+            const selected = document.querySelectorAll('#contacts-list input[type="checkbox"]:checked').length;
+            document.getElementById('selected-count').textContent = selected;
+            document.getElementById('send-btn').disabled = selected === 0;
+        }
+
+        async function sendMessage() {
+            const selected = Array.from(document.querySelectorAll('#contacts-list input[type="checkbox"]:checked')).map(cb => cb.value);
+            const message = document.getElementById('message').value.trim();
+            const photo = document.getElementById('photo').files[0];
+
+            if (selected.length === 0) {
+                alert('⚠️ En az bir kişi seçin');
+                return;
+            }
+            
+            if (selected.length > 10) {
+                alert('⚠️ Maksimum 10 kişi seçebilirsiniz');
+                return;
+            }
+
+            if (!message && !photo) {
+                alert('⚠️ Mesaj yazın veya fotoğraf seçin');
+                return;
+            }
+
+            if (!confirm(`${selected.length} kişiye mesaj göndermek istediğinize emin misiniz?`)) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('selectedContacts', JSON.stringify(selected));
+            if (message) formData.append('message', message);
+            if (photo) formData.append('photo', photo);
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('send-btn').disabled = true;
+
+            try {
+                const response = await fetch('/send', { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                const data = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.success) {
+                    let html = '<div class="alert alert-success"><strong>✅ Gönderim Tamamlandı!</strong><ul style="margin-top: 10px;">';
+                    data.results.forEach(r => {
+                        html += `<li>${r.contact}: ${r.status}</li>`;
+                    });
+                    html += '</ul></div>';
+                    document.getElementById('results').innerHTML = html;
+                    clearForm();
+                } else {
+                    document.getElementById('results').innerHTML = `<div class="alert alert-error">❌ ${data.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').innerHTML = `<div class="alert alert-error">❌ Hata: ${error.message}</div>`;
+            }
+            
+            document.getElementById('send-btn').disabled = false;
+        }
+
+        function clearForm() {
+            document.getElementById('message').value = '';
+            document.getElementById('photo').value = '';
+            const checkboxes = document.querySelectorAll('#contacts-list input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            allSelected = false;
+            updateCount();
+        }
+
+        if (!authenticated) {
+            loadQR();
+        }
+    </script>
+</body>
+</html>
