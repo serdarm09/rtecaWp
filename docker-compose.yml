@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  whatsapp-bulk:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./wwebjs_auth:/app/.wwebjs_auth
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
