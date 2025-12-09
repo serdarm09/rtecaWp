@@ -10,16 +10,20 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Session middleware
+// Trust proxy for ngrok/reverse proxy
+app.set('trust proxy', 1);
+
+// Session middleware (ngrok uyumlu)
 app.use(session({
-    secret: 'whatsapp-bulk-sender-secret-' + Math.random().toString(36),
+    secret: process.env.SESSION_SECRET || 'whatsapp-bulk-sender-secret-change-in-production',
+    name: 'whatsapp.sid',
     resave: false,
     saveUninitialized: true,
     cookie: { 
         maxAge: 24 * 60 * 60 * 1000,
-        httpOnly: true,
+        httpOnly: false,
         secure: false,
-        sameSite: 'lax'
+        sameSite: 'none'
     },
     proxy: true
 }));
@@ -29,6 +33,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
+
+// CORS for ngrok
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
 
 // Session ID oluştur
 app.use((req, res, next) => {

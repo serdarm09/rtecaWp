@@ -8,9 +8,11 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./wwebjs_auth:/app/.wwebjs_auth
+      - ./.wwebjs_auth:/app/.wwebjs_auth
     environment:
       - PORT=3000
       - NODE_ENV=production
+      - SESSION_SECRET=whatsapp-bulk-sender-secret-change-this
     restart: unless-stopped
     deploy:
       resources:
