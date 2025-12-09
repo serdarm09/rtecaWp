@@ -17,8 +17,11 @@ app.use(session({
     saveUninitialized: true,
     cookie: { 
         maxAge: 24 * 60 * 60 * 1000,
-        httpOnly: true
-    }
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax'
+    },
+    proxy: true
 }));
 
 // Middleware
