@@ -3,8 +3,7 @@ version: '3.8'
 services:
   whatsapp-bulk:
     build: .
-    ports:
-      - "3000:3000"
+    network_mode: "host"
     volumes:
       - ./uploads:/app/uploads
       - ./.wwebjs_auth:/app/.wwebjs_auth
